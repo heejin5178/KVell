@@ -30,6 +30,9 @@ char** get_from_target_dataset(size_t item_size, char* target_dataset_path) {
       assert(cur_key != 0);
       trace_key[i] = malloc(sizeof(uint64_t)); 
       trace_key[i] = cur_key;
+      if (i < 5) { // for debug
+        fprintf(stdout, "test key : %lu", trace_key[i]);
+      }
     }
 
     for (int i = 0; i < count; i++) {
