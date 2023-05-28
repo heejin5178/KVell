@@ -1,5 +1,52 @@
 #include "headers.h"
 
+char** get_from_target_dataset(size_t item_size, char* target_dataset_path) {
+    char* trace_name = target_dataset_path;
+    fprintf(stdout, "Try to use hardcoding path: %s\n", trace_name);
+    if (trace_name == "") {
+      fprintf(stdout, "trace name is empty, please fill the trace name for half guard\n");
+      exit(1);
+    }
+    FILE* trace_file = fopen(trace_name, "r");
+    if (trace_file == NULL) {
+      fprintf(stderr, "[Error] Failed opening trace file %s\n", trace_name);
+      exit(1);
+    }
+    size_t bufsize = 100;
+    char* buf = (char*)malloc(sizeof(char)*100);
+    int count = 0;
+    while (fgets(buf, bufsize, trace_file)) {
+      count++;
+    }
+    char** items = (char**)malloc(sizeof(char*)*count);
+    uint64_t* trace_key = (uint64_t*)malloc(sizeof(uint64_t)*count);
+
+    rewind(trace_file);
+    for (uint64_t i = 0; i < count; i++) {
+      uint64_t cur_key = 0;
+      int status = getline(&buf, &bufsize, trace_file);
+      assert(status > 1);
+      sscanf(buf, "%lu\n", &cur_key);
+      assert(cur_key != 0);
+      trace_key[i] = malloc(sizeof(uint64_t)); 
+      trace_key[i] = cur_key;
+    }
+
+    for (int i = 0; i < count; i++) {
+     char *item = malloc(item_size);
+     struct item_metadata *meta = (struct item_metadata *)item;
+     meta->key_size = 8;
+     meta->value_size = item_size - 8 - sizeof(*meta);
+
+     char *item_key = &item[sizeof(*meta)];
+     char *item_value = &item[sizeof(*meta) + meta->key_size];
+     *(uint64_t*)item_key = trace_key[i];
+     *(uint64_t*)item_value = trace_key[i];
+     items[i] = item;
+    }
+    fprintf(stdout, "Item size : %lu", count);
+    return items;
+}
 /*
  * Create a workload item for the database
  */

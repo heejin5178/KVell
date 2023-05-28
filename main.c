@@ -4,20 +4,23 @@ int main(int argc, char **argv) {
    int nb_disks, nb_workers_per_disk;
    declare_timer;
 
-   /* Definition of the workload, if changed you need to erase the DB before relaunching */
-   struct workload w = {
-      .api = &YCSB,
-      .nb_items_in_db = 100000000LU,
-      .nb_load_injectors = 4,
-      //.nb_load_injectors = 12, // For scans (see scripts/run-aws.sh and OVERVIEW.md)
-   };
-
 
    /* Parsing of the options */
-   if(argc < 3)
+   if(argc < 5)
       die("Usage: ./main <nb disks> <nb workers per disk>\n\tData is stored in %s\n", PATH);
    nb_disks = atoi(argv[1]);
    nb_workers_per_disk = atoi(argv[2]);
+   int num_data = atoi(argv[3]);
+
+   /* Definition of the workload, if changed you need to erase the DB before relaunching */
+   struct workload w = {
+      .api = &YCSB,
+      .nb_items_in_db = num_data,
+      .nb_load_injectors = 4,
+      .target_dataset_path = argv[4],
+      //.nb_load_injectors = 12, // For scans (see scripts/run-aws.sh and OVERVIEW.md)
+   };
+
 
    /* Pretty printing useful info */
    printf("# Configuration:\n");
@@ -32,7 +35,8 @@ int main(int argc, char **argv) {
    /* Initialization of random library */
    start_timer {
       printf("Initializing random number generator (Zipf) -- this might take a while for large databases...\n");
-      init_zipf_generator(0, w.nb_items_in_db - 1); /* This takes about 3s... not sure why, but this is legacy code :/ */
+      // init_zipf_generator(0, w.nb_items_in_db - 1); /* This takes about 3s... not sure why, but this is legacy code :/ */
+      init_zipf_generator(0, num_data); /* This takes about 3s... not sure why, but this is legacy code :/ */
    } stop_timer("Initializing random number generator (Zipf)");
 
    /* Recover database */

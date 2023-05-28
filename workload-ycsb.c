@@ -32,14 +32,20 @@ static int random_get_put(int test) {
 }
 
 /* YCSB A (or D), B, C */
-static void _launch_ycsb(int test, int nb_requests, int zipfian) {
+static void _launch_ycsb(int test, int nb_requests, int zipfian, char* target_dataset_name) {
+   size_t item_size = 1024; // hj: default
+   char** items = get_from_target_dataset(item_size, target_dataset_name);
    declare_periodic_count;
    for(size_t i = 0; i < nb_requests; i++) {
       struct slab_callback *cb = bench_cb();
+      size_t idx = zipfian ? zipf_next() : uniform_next();
+      assert(idx < item_size);
       if(zipfian)
-         cb->item = _create_unique_item_ycsb(zipf_next());
+         // cb->item = _create_unique_item_ycsb(zipf_next());
+         cb->item = items[idx];
       else
-         cb->item = _create_unique_item_ycsb(uniform_next());
+         // cb->item = _create_unique_item_ycsb(uniform_next());
+         cb->item = items[idx];
       if(random_get_put(test)) { // In these tests we update with a given probability
          kv_update_async(cb);
       } else { // or we read
@@ -78,21 +84,21 @@ static void _launch_ycsb_e(int test, int nb_requests, int zipfian) {
 static void launch_ycsb(struct workload *w, bench_t b) {
    switch(b) {
       case ycsb_a_uniform:
-         return _launch_ycsb(0, w->nb_requests_per_thread, 0);
+         return _launch_ycsb(0, w->nb_requests_per_thread, 0, w->target_dataset_path);
       case ycsb_b_uniform:
-         return _launch_ycsb(1, w->nb_requests_per_thread, 0);
+         return _launch_ycsb(1, w->nb_requests_per_thread, 0, w->target_dataset_path);
       case ycsb_c_uniform:
-         return _launch_ycsb(2, w->nb_requests_per_thread, 0);
+         return _launch_ycsb(2, w->nb_requests_per_thread, 0, w->target_dataset_path);
       case ycsb_e_uniform:
-         return _launch_ycsb_e(3, w->nb_requests_per_thread, 0);
+         return _launch_ycsb_e(3, w->nb_requests_per_thread, 0); // hj: for workload-e, custom dataset not supported
       case ycsb_a_zipfian:
-         return _launch_ycsb(0, w->nb_requests_per_thread, 1);
+         return _launch_ycsb(0, w->nb_requests_per_thread, 1, w->target_dataset_path);
       case ycsb_b_zipfian:
-         return _launch_ycsb(1, w->nb_requests_per_thread, 1);
+         return _launch_ycsb(1, w->nb_requests_per_thread, 1, w->target_dataset_path);
       case ycsb_c_zipfian:
-         return _launch_ycsb(2, w->nb_requests_per_thread, 1);
+         return _launch_ycsb(2, w->nb_requests_per_thread, 1, w->target_dataset_path);
       case ycsb_e_zipfian:
-         return _launch_ycsb_e(3, w->nb_requests_per_thread, 1);
+         return _launch_ycsb_e(3, w->nb_requests_per_thread, 1); // hj: for workload-e, custom dataset not supported
       default:
          die("Unsupported workload\n");
    }

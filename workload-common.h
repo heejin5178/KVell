@@ -39,6 +39,7 @@ struct workload {
    int nb_load_injectors;
    uint64_t nb_requests;
    uint64_t nb_items_in_db;
+   char* target_dataset_path;
 
    const char *db_path;
 
